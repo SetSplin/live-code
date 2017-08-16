@@ -42,14 +42,22 @@ socket.on('initValue', function(value) {
 socket.on('changeValue', function(data) {
   if (data.id != id) {
     let cursorPosition = Editor.getCursor();
-    Editor.setValue(data.value);
+
+    let added = data.changes.text.join('\n');
+
+    Editor.replaceRange(
+      added,
+      data.changes.from,
+      data.changes.to
+    );
+
     Editor.setCursor(cursorPosition);
   }
 });
 
 Editor.on('change', function(event, changes) {
-  if (changes.origin != 'setValue') {
-    socket.emit('changeValue', {id: id ,value: Editor.getValue()});
+  if (changes.origin != 'setValue' && changes.origin != undefined) {
+    socket.emit('changeValue', {id: id, changes: changes});
   }
 });
 
