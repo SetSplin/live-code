@@ -1,0 +1,13 @@
+{
+  "name": "team-code",
+  "version": "1.0.0",
+  "description": "Live code view",
+  "main": "server.js",
+  "scripts": {},
+  "author": "Igor Tarakanov",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.15.4",
+    "socket.io": "^2.0.3"
+  }
+}
