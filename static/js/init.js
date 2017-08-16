@@ -48,7 +48,8 @@ socket.on('changeValue', function(data) {
     Editor.replaceRange(
       added,
       data.changes.from,
-      data.changes.to
+      data.changes.to,
+      'setValue'
     );
 
     Editor.setCursor(cursorPosition);
@@ -56,7 +57,7 @@ socket.on('changeValue', function(data) {
 });
 
 Editor.on('change', function(event, changes) {
-  if (changes.origin != 'setValue' && changes.origin != undefined) {
+  if (changes.origin != 'setValue') {
     socket.emit('changeValue', {id: id, changes: changes});
   }
 });
