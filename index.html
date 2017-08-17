@@ -10,10 +10,15 @@
 <body>
 
   <div class="file">
-    <div class="selected" id="filename"><span class="name" id="name">filename</span><span>.js</span></div>
+    <div class="selected" id="filename"><span class="selectedFileName" id="name">filename</span><span>.js</span></div>
     <ul id="filenames" class="hide">
-      <li><span contenteditable="true" id="newName" class="grey-text" tabindex="0" onsubmit="addFile">new...</span><img src="/static/img/plus.svg" alt="+"></li>
     </ul>
+    <div class="hide" id="newNameWrapper">
+      <span contenteditable="true" id="newName" class="grey-text" tabindex="0" onsubmit="addFile">
+        new...
+      </span>
+      <img src="/static/img/plus.svg" alt="+" id="addNewFile">
+    </div>
   </div>
 
   <div class="users">
@@ -27,7 +32,7 @@
   <script src="/static/js/codemirror.js"></script>
   <script src="/static/js/javascript.js"></script>
   <script src="/static/js/socket.io.js"></script>
-  <script src="/static/js/init.js"></script>
+  <script src="/static/js/scripts.js"></script>
 
 </body>
 </html>

@@ -22,7 +22,7 @@ io.on('connection', function(socket) {
 
   socket.on('getValue', function(value) {
     if (io.engine.clientsCount == 1) {
-      io.emit('initValue', {'filename': '// filename.js'});
+      io.emit('initValue', {'index': '// index.js'});
     } else {
       io.emit('getValue', value);
     }
