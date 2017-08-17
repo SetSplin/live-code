@@ -43,6 +43,9 @@ var handleChangeFilename = function(event) {
 };
 
 function addFilename(name) {
+  if (files[name] != undefined) {
+    return;
+  }
   let newLi = document.createElement('li');
   newLi.innerHTML = name;
   newLi.onclick = handleChangeFilename;
