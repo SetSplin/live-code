@@ -61,6 +61,7 @@ socket.on('newFile', function(data) {
 });
 
 socket.on('initValue', function(data) {
+  console.log(data);
   if (initialization) {
     Editor.setValue(data['filename']);
     files = data;
@@ -102,8 +103,8 @@ socket.on('users', function(value) {
 });
 
 Editor.on('change', function(event, changes) {
-  files[currentName] = Editor.getValue();
   if (changes.origin != 'setValue') {
+    files[currentName] = Editor.getValue();
     socket.emit('changeValue', {id: id, changes: changes, name: currentName});
   }
 });
@@ -122,11 +123,11 @@ $('li img').on('click', function() {
     $('#newName').addClass('grey-text');
     return;
   }
-  files[newName] = '';
   files[currentName] = Editor.getValue();
-  $('#name')[0].innerHTML = newName;
-  Editor.setValue('// ' + newName + '.js');
+  files[newName] = '// ' + newName + '.js';
+  Editor.setValue(files[newName]);
   currentName = newName;
+  $('#name')[0].innerHTML = newName;
   addFilename(newName);
   $('#filenames').toggleClass('hide');
   $('#newName').addClass('grey-text');
