@@ -56,8 +56,10 @@ socket.on('getValue', function(data) {
 });
 
 socket.on('newFile', function(data) {
-  files[data] = '// ' + data + '.js';
-  addFilename(data);
+  if (data.id != id) {
+    files[data.name] = '// ' + data.name + '.js';
+    addFilename(data.name);
+  }
 });
 
 socket.on('initValue', function(data) {
@@ -132,7 +134,7 @@ function addFile() {
   $('#newName').addClass('grey-text');
   $('#newName')[0].innerHTML = 'new...';
   entering = false;
-  socket.emit('newFile', newName);
+  socket.emit('newFile', {name: newName, id: id});
 }
 
 $('li img').on('click', addFile);
