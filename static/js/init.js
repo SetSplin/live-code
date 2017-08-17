@@ -61,7 +61,6 @@ socket.on('newFile', function(data) {
 });
 
 socket.on('initValue', function(data) {
-  console.log(data);
   if (initialization) {
     Editor.setValue(data['filename']);
     files = data;
@@ -115,7 +114,7 @@ $('#filename').on('click', function() {
   $('#filenames').toggleClass('hide');
 });
 
-$('li img').on('click', function() {
+function addFile() {
   let newName = $('#newName')[0].innerHTML;
   if (files[newName] != undefined || newName == '' || newName == 'new...') {
     $('#newName')[0].innerHTML = 'new...';
@@ -133,7 +132,9 @@ $('li img').on('click', function() {
   $('#newName').addClass('grey-text');
   $('#newName')[0].innerHTML = 'new...';
   entering = false;
-});
+}
+
+$('li img').on('click', addFile);
 
 $('#newName').on('click', function() {
   if (!entering) {
