@@ -3,9 +3,10 @@ var Editor = CodeMirror(document.body, {
   mode:  'javascript',
   lineNumbers: true,
   theme: 'monokai',
-  tabSize: 4,
-  indentWithTabs: true
+  tabSize: 2
 });
+
+var HiddenEditor = CodeMirror($('#hiddenEditor')[0]);
 
 $('.CodeMirror').attr('autocomplete', 'off');
 $('.CodeMirror').attr('autocorrect', 'off');
@@ -25,41 +26,118 @@ function makeid() {
 var socket = io();
 var initialization = true;
 var id = makeid();
+var files = {};
+var currentName = 'filename';
+var entering = false;
+
+
+var handleChangeFilename = function(event) {
+  if (event.target.tagName == 'LI') {
+    let newName = event.target.innerHTML;
+    $('#name')[0].innerHTML = newName;
+    files[currentName] = Editor.getValue();
+    Editor.setValue(files[newName]);
+    currentName = newName;
+    $('#filenames').toggleClass('hide');
+  }
+};
+
+function addFilename(name) {
+  let newLi = document.createElement('li');
+  newLi.innerHTML = name;
+  newLi.onclick = handleChangeFilename;
+  $('#filenames')[0].appendChild(newLi);
+}
 
 socket.on('getValue', function(data) {
   if (!initialization) {
-    socket.emit('initValue', Editor.getValue());
+    socket.emit('initValue', files);
   }
 });
 
-socket.on('initValue', function(value) {
+socket.on('newFile', function(data) {
+  files[data] = '// ' + data + '.js';
+  addFilename(data);
+});
+
+socket.on('initValue', function(data) {
   if (initialization) {
-    Editor.setValue(value)
+    Editor.setValue(data['filename']);
+    files = data;
     initialization = false;
+    let keys = Object.keys(data);
+    for (let i = 0; i < keys.length; i++) {
+      addFilename(keys[i])
+    }
   }
 });
 
 socket.on('changeValue', function(data) {
   if (data.id != id) {
-    let cursorPosition = Editor.getCursor();
-
     let added = data.changes.text.join('\n');
-
-    Editor.replaceRange(
-      added,
-      data.changes.from,
-      data.changes.to,
-      'setValue'
-    );
-
-    Editor.setCursor(cursorPosition);
+    if (data.name == currentName) {
+      let cursorPosition = Editor.getCursor();
+      Editor.replaceRange(
+        added,
+        data.changes.from,
+        data.changes.to,
+        'setValue'
+      );
+      Editor.setCursor(cursorPosition);
+    } else {
+      HiddenEditor.setValue(files[data.name]);
+      HiddenEditor.replaceRange(
+        added,
+        data.changes.from,
+        data.changes.to,
+        'setValue'
+      );
+      files[data.name] = HiddenEditor.getValue();
+    }
   }
 });
 
+socket.on('users', function(value) {
+  $('#users')[0].innerHTML = value;
+});
+
 Editor.on('change', function(event, changes) {
+  files[currentName] = Editor.getValue();
   if (changes.origin != 'setValue') {
-    socket.emit('changeValue', {id: id, changes: changes});
+    socket.emit('changeValue', {id: id, changes: changes, name: currentName});
   }
 });
 
 socket.emit('getValue', {});
+
+$('#filename').on('click', function() {
+  $('#filenames').toggleClass('hide');
+});
+
+$('li img').on('click', function() {
+  let newName = $('#newName')[0].innerHTML;
+  if (files[newName] != undefined || newName == '' || newName == 'new...') {
+    $('#newName')[0].innerHTML = 'new...';
+    entering = false;
+    $('#newName').addClass('grey-text');
+    return;
+  }
+  files[newName] = '';
+  files[currentName] = Editor.getValue();
+  $('#name')[0].innerHTML = newName;
+  Editor.setValue('// ' + newName + '.js');
+  currentName = newName;
+  addFilename(newName);
+  $('#filenames').toggleClass('hide');
+  $('#newName').addClass('grey-text');
+  $('#newName')[0].innerHTML = 'new...';
+  entering = false;
+});
+
+$('#newName').on('click', function() {
+  if (!entering) {
+    entering = true;
+    $('#newName').removeClass('grey-text');
+    $('#newName')[0].innerHTML = '';
+  }
+});

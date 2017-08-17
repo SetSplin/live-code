@@ -17,11 +17,12 @@ io.on('connection', function(socket) {
 
 
   socket.on('disconnect', function() {
+    io.emit('users', io.engine.clientsCount);
   });
 
   socket.on('getValue', function(value) {
     if (io.engine.clientsCount == 1) {
-      io.emit('initValue', 'function foo() {\n\tbar();\n}\n');
+      io.emit('initValue', {'filename': '// filename.js'});
     } else {
       io.emit('getValue', value);
     }
@@ -29,6 +30,7 @@ io.on('connection', function(socket) {
 
   socket.on('initValue', function(value) {
     io.emit('initValue', value);
+    io.emit('users', io.engine.clientsCount);
   });
 
   socket.on('changeValue', function(value) {
