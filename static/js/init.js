@@ -132,6 +132,7 @@ function addFile() {
   $('#newName').addClass('grey-text');
   $('#newName')[0].innerHTML = 'new...';
   entering = false;
+  socket.emit('newFile', newName);
 }
 
 $('li img').on('click', addFile);

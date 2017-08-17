@@ -37,6 +37,10 @@ io.on('connection', function(socket) {
     io.emit('changeValue', value);
   });
 
+  socket.on('newFile', function(value) {
+    io.emit('newFile', value);
+  });
+
 });
 
 http.listen(PORT, function() {
