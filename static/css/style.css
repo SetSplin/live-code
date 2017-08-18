@@ -54,7 +54,7 @@ body {
 }
 
 .hide {
-  display: none;
+  display: none !important;
 }
 
 .file ul li {

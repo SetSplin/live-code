@@ -15,7 +15,7 @@ var Storage = function(files) {
   this._files = files;
 
   this.fileExist = (name) => {
-    return (this.getFile(name) != undefined)
+    return (this._files[name] != undefined)
   }
 
   this.getFiles = () => {
@@ -45,19 +45,21 @@ var Storage = function(files) {
   };
 };
 
-var Dropdown = function(storage) {
+var Dropdown = function(storage, socket) {
   this._tabs = [];
   this._storage = storage;
+  this._mainEditor = undefined;
+  this._socket = socket;
   this._entering = false;
-  this._handler = (event) => {
-    console.error('ERROR: Tab change handler is unset');
-  };c
+  this._handler = undefined;
 
   this.addTab = (name) => {
     this._tabs.push(name);
     let newLi = document.createElement('li');
     newLi.innerHTML = name;
-    newLi.onclick = this._handler;
+    if (this._handler) {
+      newLi.onclick = this._handler;
+    }
     $('#filenames')[0].appendChild(newLi);
   };
 
@@ -71,12 +73,25 @@ var Dropdown = function(storage) {
 
   this.setHandler = (handler) => {
     this._handler = handler;
+    $('li').on('click', handler);
   }
+
+  this.setMainEditor = (editor) => {
+    this._mainEditor = editor;
+  };
   
-  $('#filename').on('click', function() {
+  $('#selectedFileName').on('click', function() {
     $('#filenames').toggleClass('hide');
     $('#newNameWrapper').toggleClass('hide');
   });
+
+  $('#newName').on('click', function() {
+  if (!this._entering) {
+    this._entering = true;
+    $('#newName').removeClass('grey-text');
+    $('#newName')[0].innerHTML = '';
+  }
+});
 
   $('#addNewFile').on('click', () => {
     let newName = $('#newName')[0].innerHTML;
@@ -86,7 +101,10 @@ var Dropdown = function(storage) {
     if (this._storage.fileExist(newName) || newName == '' || newName == 'new...') {
       return;
     } else {
-      // TODO
+      this.addTab(newName);
+      this._storage.addFile(newName, '// ' + newName + '.js');
+      this._socket.emit('newFile', {name: newName, id: id}); // id is global variable
+      this._mainEditor.switchFile(newName);
     }
   })
 };
@@ -112,15 +130,16 @@ var Editor = function(mainEditor, hiddenEditor, storage, dropdown) {
 
   this.ChangesHandler = (name, changes) => {
     if (name == this._activeFileName) {
-      let editor = this._mainEditor;
-      let cursorPosition = editor.getCursor();
+      var GOVNO = this._mainEditor;
+      var cursorPosition = GOVNO.getCursor();
     } else {
-      let cursorPosition = undefined;
-      let editor = this.hiddenEditor;
+      var GOVNO = this._hiddenEditor;
+      var cursorPosition = undefined;
     }
 
+
     let added = changes.text.join('\n');
-    editor.replaceRange(
+    GOVNO.replaceRange(
       added,
       changes.from,
       changes.to,
@@ -128,23 +147,23 @@ var Editor = function(mainEditor, hiddenEditor, storage, dropdown) {
     );
 
     if (cursorPosition) {
-      editor.setCursor(cursorPosition);
+      GOVNO.setCursor(cursorPosition);
     }
 
-    this._files.setFile(name, editor.getValue());
+    this._storage.setFile(name, GOVNO.getValue());
   };
 
   this.addChangesListener = (listener) => {
     this._mainEditor.on('change', (event, changes) => {
       if (changes.origin != 'setValue') {
-        listener(changes);
+        listener(changes, this._activeFileName);
       }
     });
   };
 
   this._mainEditor.on('change', (event, changes) => {
     if (changes.origin != 'setValue') {
-        this._files.setFile(
+        this._storage.setFile(
           this._activeFileName,
           this._mainEditor.getValue()
         );
@@ -175,40 +194,35 @@ $('.CodeMirror').attr('spellcheck', 'false');
 var socket = io();
 var initialization = true; // flag for initial request
 var id = makeid();
-
-var editor = new Editor(
-  visibleEditor,
-  hiddenEditor,
-  storage,
-  dropdown
-);
+var storage, dropdown, editor;
 
 socket.on('initValue', function(data) { // initial response
   if (initialization) {
     initialization = false;
-    var storage = new Storage(data);
-    var dropdown = new Dropdown(storage);
+    storage = new Storage(data);
+    dropdown = new Dropdown(storage, socket);
     let files = Object.keys(data);
     for (let i = 0; i < files.length; i++) {
       dropdown.addTab(files[i]);
     }
-    dropdown.setTab('index');
-    var editor = new Editor(
+    editor = new Editor(
       visibleEditor,
       hiddenEditor,
       storage,
       dropdown
     );
-    editor.addChangesListener(function(changes) {
+    editor.addChangesListener(function(changes, name) {
       socket.emit(
         'changeValue',
         {
           id: id,
           changes: changes,
-          name: editor.getActiveFileName
+          name: name
         }
       )
     });
+    dropdown.setMainEditor(editor);
+    editor.switchFile('index');
   }
 });
 
@@ -220,7 +234,7 @@ socket.on('getValue', function(data) { // initial request
 
 socket.on('newFile', function(data) { // new file create handler
   if (data.id != id) {
-    files.addFile(
+    storage.addFile(
       data.name,
       '// ' + data.name + '.js'
     );
