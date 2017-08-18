@@ -134,6 +134,7 @@ var Editor = function(mainEditor, hiddenEditor, storage, dropdown) {
       var cursorPosition = GOVNO.getCursor();
     } else {
       var GOVNO = this._hiddenEditor;
+      GOVNO.setValue(this._storage.getFile(name));
       var cursorPosition = undefined;
     }
 
